@@ -139,7 +139,7 @@ public:
         }
     }
 
-    void MazePaint(GameSettings& settings, RenderWindow& window) {
+    void MazePaint(GameSettings& settings, RenderWindow& window, Sprite fruitShape) {
         RectangleShape square(Vector2f(settings.getGridSize(), settings.getGridSize()));
         square.setFillColor(settings.getSquareColor());
         CircleShape smallCircle(3);
@@ -174,11 +174,53 @@ public:
                     pacman.setPosition(j * settings.getGridSize(), i * settings.getGridSize());
                     window.draw(pacman);
                 }
+                else if (maze[i][j] == 'F')
+                {
+                    window.draw(fruitShape);
+                }
             }
     }
 };
 
+class Fruit {
+private:
+    int x;       //координата X на карте
+    int y;       //координата Y на карте
+    int points;  //количество очков за съедение
+    Sprite sprite; //графическое представление
+    static bool isActive;  //активен ли фрукт
+public:
+    Fruit() {};
+    Fruit(int points, Sprite sprite) : points(points), sprite(sprite) {}
+    int getX() const { return x; }
+    int getY() const { return y; }
+    int getPoints() const { return points; }
+    Sprite getSprite() const { return sprite; }
+    static void setIsActive(bool active) { Fruit::isActive = active; }
+    bool getIsActive() { return Fruit::isActive; }
 
+    void createFruit(GameSettings& settings, Map& map, RenderWindow& window) {
+        int sum = (map.getSmallFood()).getCount() + (map.getBigFood()).getCount();
+        if ((sum == 176 || sum == 76) && !isActive)  //когда Пакман съел первые 70 или 170 точек
+        {
+            int randY, randX;
+            do {                                           //выбор случайных координат
+                randY = rand() % 30 + 4;
+                randX = rand() % 23 + 4;
+            } while (map.getTile(randY, randX) != ' ');
+            x = randX;
+            y = randY;
+            sprite.setPosition(randX * settings.getGridSize(), randY * settings.getGridSize());
+            isActive = true;
+        }
+        if (isActive)                                 //если фрукт активен, добавляем его на карту
+        {
+            map.setTile(y, x, 'F');
+        }
+    }
+};
+
+bool Fruit::isActive = false;
 
 class Pacman {
 private:
@@ -206,7 +248,8 @@ public:
     void updateHighScore(int newScore);
 
     int Lose(Blinky& blinky, Pinky& pinky, Inky& inky, Clyde& clyde);
-    void move(Map& map) {
+
+    void move(Map& map, Fruit& fruit) {
         if (Keyboard::isKeyPressed(Keyboard::Up) && map.getTile(nextY - 1, nextX) != 'X' && !(nextY == 17 && nextX == 0 || nextY == 17 && nextX == map.getW() - 1)) {
             nextDirection = 0;
             nextX = x;
@@ -257,7 +300,7 @@ public:
             speed = 0;
         }
 
-        if ((map.getTile(nextY, nextX) == ' ' || map.getTile(nextY, nextX) == (map.getSmallFood()).getType() || map.getTile(nextY, nextX) == (map.getBigFood()).getType()) && nextY != 0 && nextX != 0)
+        if (map.getTile(nextY, nextX) != 'X')
         {
             if (map.getTile(nextY, nextX) == (map.getSmallFood()).getType())
             {
@@ -268,6 +311,11 @@ public:
             {
                 addScore((map.getBigFood()).getPoint());
                 (map.getBigFood()).decreaseCount();
+            }
+            if (map.getTile(nextY, nextX)=='F')
+            {
+                addScore(fruit.getPoints());
+                fruit.setIsActive(false);
             }
             map.setTile(y, x, ' ');
             map.setTile(nextY, nextX, 'P');
@@ -594,6 +642,44 @@ int main()
     Map map(35, 30, smallFood, bigFood);
     map.createMap();
     
+    sf::Texture cherryTexture;
+    cherryTexture.loadFromFile("images/cherry.png");
+    sf::Sprite cherryShape;
+    cherryShape.setTexture(cherryTexture);
+    cherryShape.setScale(0.1f, 0.1f);
+
+    sf::Texture appleTexture;
+    appleTexture.loadFromFile("images/apple.png");
+    sf::Sprite appleShape;
+    appleShape.setTexture(appleTexture);
+    appleShape.setScale(0.02f, 0.02f);
+
+    sf::Texture pearTexture;
+    pearTexture.loadFromFile("images/pear.png");
+    sf::Sprite pearShape;
+    pearShape.setTexture(pearTexture);
+    pearShape.setScale(0.1f, 0.1f);
+
+    sf::Texture orangeTexture;
+    orangeTexture.loadFromFile("images/orange.png");
+    sf::Sprite orangeShape;
+    orangeShape.setTexture(orangeTexture);
+    orangeShape.setScale(0.1f, 0.1f);
+
+    sf::Texture watermelonTexture;
+    watermelonTexture.loadFromFile("images/watermelon.png");
+    sf::Sprite watermelonShape;
+    watermelonShape.setTexture(watermelonTexture);
+    watermelonShape.setScale(0.03f, 0.03f);
+
+    //массив фруктов
+    Fruit fruitArray[5];
+    fruitArray[0] = Fruit(20, cherryShape);
+    fruitArray[1] = Fruit(30, appleShape);
+    fruitArray[2] = Fruit(40, pearShape);
+    fruitArray[3] = Fruit(50, orangeShape);
+    fruitArray[4] = Fruit(60, watermelonShape);
+    int randFruit = 0;
 
     //Mассив динамических объектов класса Ghost
     ghostArray[0] = new Blinky(11, 14, 0, 3, 3);
@@ -641,8 +727,13 @@ int main()
                 game.resetGame(map, pacman, ghostArray, settings, Result, f);
             }
         }
+        if (!fruitArray[0].getIsActive())
+        {
+            randFruit = rand() % 5 ;
+        }
         window.clear(Color::Black);
-        map.MazePaint(settings, window);
+        fruitArray[randFruit].createFruit(settings, map, window);
+        map.MazePaint(settings, window, fruitArray[randFruit].getSprite());
         if (f = pacman.WonOrLost(map.getSmallFood(), map.getBigFood(), Result))
         {
             blinky.ghostDraw(settings.getBlinkyColor(), window, settings);
@@ -657,7 +748,7 @@ int main()
         else
         {
            
-            pacman.move(map);
+            pacman.move(map, fruitArray[randFruit]);
 
             if (pacman.Lose(blinky, pinky, inky, clyde))
             {
@@ -694,7 +785,7 @@ int main()
 
         scoreText.setString("Score " + std::to_string(pacman.getScore()));
         livesText.setString("Lives " + std::to_string(pacman.getLives()));
-        highScore.setString("High score " + std::to_string((map.getSmallFood()).getCount()));
+        highScore.setString("High score " + std::to_string(pacman.getHighScore()));
         window.draw(scoreText);
         window.draw(livesText);
         window.draw(highScore);
