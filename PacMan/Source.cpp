@@ -247,9 +247,11 @@ public:
     int getHighScore();
     void updateHighScore(int newScore);
 
-    int Lose(Blinky& blinky, Pinky& pinky, Inky& inky, Clyde& clyde);
+    void setGhostsFrightened(Ghost** ghost, int duration);
 
-    void move(Map& map, Fruit& fruit) {
+    int Collision(Ghost** ghost);
+
+    void move(Map& map, Fruit& fruit, Ghost** ghost) {
         if (Keyboard::isKeyPressed(Keyboard::Up) && map.getTile(nextY - 1, nextX) != 'X' && !(nextY == 17 && nextX == 0 || nextY == 17 && nextX == map.getW() - 1)) {
             nextDirection = 0;
             nextX = x;
@@ -311,6 +313,7 @@ public:
             {
                 addScore((map.getBigFood()).getPoint());
                 (map.getBigFood()).decreaseCount();
+                setGhostsFrightened(ghost, 3000);
             }
             if (map.getTile(nextY, nextX)=='F')
             {
@@ -351,8 +354,16 @@ void Pacman::updateHighScore(int newScore) {
 }
 
 class Ghost {
-private:
+public:
+    enum GhostState {
+        NORMAL,
+        FRIGHTENED,
+        EATEN
+    };
+    protected:
     int x, y, score, direction, lastDirection;
+    int frightenedTimer;  // таймер для режима испуга
+    GhostState currentState;
 public:
     Ghost() {};
     ~Ghost() {};
@@ -364,23 +375,270 @@ public:
     int getLastDirection() const { return lastDirection; }
     void setAll(int a, int b, int c, int d, int e) { x = a, y = b, score = c, d = direction, e = lastDirection; }
 
+    GhostState getCurrentState() { return currentState; }
+    void setGhostState(GhostState state, int duration) {
+        currentState = state;
+        frightenedTimer = duration;
+    }
+
     float distance(int x1, int y1, int x2, int y2) {
         return (sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2)));
     }
-
     void ghostDraw(sf::Color color, RenderWindow& window, GameSettings settings)
     {
         RectangleShape ghostShape(Vector2f(settings.getGridSize(), settings.getGridSize()));
-        ghostShape.setFillColor(color);
+        if (currentState == FRIGHTENED)
+        {
+            ghostShape.setFillColor(sf::Color::White); //Белый цвет для испуганного состояния
+        }
+        else
+            ghostShape.setFillColor(color);
         ghostShape.setPosition(getX() * settings.getGridSize(), getY() * settings.getGridSize());
         window.draw(ghostShape);
     }
 
-    void move(Map map, int goalX, int goalY) {
-        float distanceUp, distanceDown, distanceLeft, distanceRight;
-        double minDistance = INFINITY;
-        int change = 0;
+    void move(Map map, int goalX, int goalY, Ghost** ghost);
+                       
+};
 
+void Pacman::setGhostsFrightened(Ghost** ghost, int duration) {
+    for (int i = 0; i < 4; ++i)
+    {
+        ghost[i]->setGhostState(Ghost::FRIGHTENED, duration);
+    }
+}
+
+int Pacman::Collision(Ghost** ghost)
+{
+    int result = 0;
+    if (getX() == ghost[0]->getX() && getY() == ghost[0]->getY()) {
+        if (ghost[0]->getCurrentState() == Ghost::FRIGHTENED)
+        {
+            ghost[0]->setAll(13, 16, 0, 3, 3);
+            addScore(300);
+        }
+        else
+        {
+            loseLife();
+            result = 1;
+        }
+    }
+    else if (getX() == ghost[1]->getX() && getY() == ghost[1]->getY()) {
+        if (ghost[1]->getCurrentState() == Ghost::FRIGHTENED)
+        {
+            ghost[1]->setAll(16, 16, 0, 3, 3);
+            addScore(300);
+        }
+        else
+        {
+            loseLife();
+            result = 1;
+        }
+    }
+    else if (getX() == ghost[2]->getX() && getY() == ghost[2]->getY()) {
+        if (ghost[2]->getCurrentState() == Ghost::FRIGHTENED)
+        {
+            ghost[2]->setAll(13, 18, 0, 3, 3);
+            addScore(300);
+        }
+        else
+        {
+            loseLife();
+            result = 1;
+        }
+    }
+    else if (getX() == ghost[3]->getX() && getY() == ghost[3]->getY()) {
+        if (ghost[3]->getCurrentState() == Ghost::FRIGHTENED)
+        {
+            ghost[3]->setAll(16, 18, 0, 3, 3);
+            addScore(300);
+        }
+        else
+        {
+            loseLife();
+            result = 1;
+        }
+    }
+    return result;
+}
+
+class Blinky : public Ghost {
+private:
+    int x, y, score, direction, lastDirection;
+public:
+    ~Blinky() {};
+    Blinky() {};
+    Blinky(int x, int y, int score, int direction, int lastDirection) : Ghost(x, y, score, direction, lastDirection) {};
+    void BlinkyMove(Pacman pacman, Map map, GameSettings settings, RenderWindow& window, Ghost** ghost) {
+        move(map, pacman.getX(), pacman.getY(), ghost);
+        ghostDraw(settings.getBlinkyColor(), window, settings);
+    }
+};
+
+class Pinky : public Ghost {
+private:
+    int x, y, score, direction, lastDirection;
+public:
+    ~Pinky() {};
+    Pinky() {};
+    Pinky(int x, int y, int score, int direction, int lastDirection) : Ghost(x, y, score, direction, lastDirection) {};
+    void PinkyMove(Pacman pacman, Map map, GameSettings settings, RenderWindow& window, Ghost** ghost) {
+        int a = pacman.getX(), b = pacman.getY();
+        switch (pacman.getNextDirection())
+        {
+        case 0:
+            b = b - 4;
+            break;
+        case 1:
+            b = b + 4;
+            break;
+        case 2:
+            a = a - 4;
+            break;
+        case 3:
+            a = a + 4;
+            break;
+        }
+        move(map, a, b, ghost);
+        ghostDraw(settings.getPinkyColor(), window, settings);
+    }
+};
+
+class Inky : public Ghost {
+private:
+    int x, y, score, direction, lastDirection;
+public:
+    ~Inky() {};
+    Inky() {};
+    Inky(int x, int y, int score, int direction, int lastDirection) : Ghost(x, y, score, direction, lastDirection) {};
+    void InkyMove(Pacman pacman, Map map, Ghost blinky, GameSettings settings, RenderWindow& window, Ghost** ghost) {
+        int a = pacman.getX(), b = pacman.getY();
+        switch (pacman.getNextDirection())
+        {
+        case 0:
+            b = b - 2;
+            break;
+        case 1:
+            b = b + 2;
+            break;
+        case 2:
+            a = a - 2;
+            break;
+        case 3:
+            a = a + 2;
+            break;
+        }
+        a = blinky.getX() + 2 * (a - blinky.getX());
+        b = blinky.getY() + 2 * (b - blinky.getY());
+        move(map, a, b, ghost);
+        ghostDraw(settings.getInkyColor(), window, settings);
+    }
+};
+
+class Clyde : public Ghost {
+private:
+    int x, y, score, direction, lastDirection;
+public:
+    ~Clyde() {};
+    Clyde() {};
+    Clyde(int x, int y, int score, int direction, int lastDirection) : Ghost(x, y, score, direction, lastDirection) {};
+    void ClydeMove(Pacman pacman, Map map, GameSettings settings, RenderWindow& window, Ghost** ghost) {
+        int a, b;
+        float mainDistance = distance(pacman.getX(), pacman.getY(), x, y);
+        if (mainDistance > 8)
+        {
+            a = pacman.getX();
+            b = pacman.getY();
+        }
+        else
+        {
+            a = 0;
+            b = map.getH();
+        }
+        move(map, a, b, ghost);
+        ghostDraw(settings.getClydeColor(), window, settings);
+    }
+};
+
+
+   
+void Ghost::move(Map map, int goalX, int goalY, Ghost** ghost) {
+    float distanceUp, distanceDown, distanceLeft, distanceRight;
+    double minDistance = INFINITY;
+    int change = 0;
+    int f = 0;
+
+    if (currentState == FRIGHTENED) {
+        //случайное движение
+        frightenedTimer--;
+        if (frightenedTimer <= 0) {
+            currentState = NORMAL;
+            ghost[0]->setAll(11, 14, 0, 3, 3);
+            ghost[1]->setAll(13, 14, 0, 3, 3);
+            ghost[2]->setAll(15, 14, 0, 3, 3);
+            ghost[3]->setAll(17, 14, 0, 3, 3);
+        }
+        score++;
+        if (score >= 400)
+        {
+            change = 1;
+            int newDirection;
+            do {
+                newDirection = rand() % 4;
+                f = 0; // Начинаем с предположения, что направление недопустимо
+
+                if (newDirection == 0) { // Вверх
+                    if (map.getTile(y - 1, x) != 'X' && lastDirection != 1 && !(y == 17 && x == 0 || y == 17 && x == map.getW() - 1)) {
+                        f = 1; // Установим f в 1, если направление подходит
+                    }
+                }
+                else if (newDirection == 1) { // Вниз
+                    if (map.getTile(y + 1, x) != 'X' && lastDirection != 0 && !(y == 17 && x == 0 || y == 17 && x == map.getW() - 1)) {
+                        f = 1; // Установим f в 1, если направление подходит
+                    }
+                }
+                else if (newDirection == 2) { // Влево
+                    if (map.getTile(y, x - 1) != 'X' && lastDirection != 3) {
+                        f = 1; // Установим f в 1, если направление подходит
+                    }
+                }
+                else if (newDirection == 3) { // Вправо
+                    if (map.getTile(y, x + 1) != 'X' && lastDirection != 2) {
+                        f = 1; // Установим f в 1, если направление подходит
+                    }
+                }
+                // Если f равно нулю, то цикл должен повторится
+            } while (f == 0);
+            direction = newDirection;
+            switch (direction) {
+            case 0: //Движение вверх
+                y--;
+                break;
+            case 1: //Движение вниз
+                y++;
+                break;
+            case 2: //Движение влево
+                if (y == 17 && x == 1)
+                    x = map.getW() - 2;
+                else
+                    x--;
+                break;
+            case 3: //Движение вправо
+                if (y == 17 && x == map.getW() - 2)
+                    x = 1;
+                else
+                    x++;
+                break;
+            default:
+                break;
+            }
+            score = 0;
+        }
+        if (lastDirection != direction && change)
+            lastDirection = direction;
+    }
+    else
+    {
         distanceUp = distance(goalX, goalY, x, y - 1);
         distanceDown = distance(goalX, goalY, x, y + 1);
         if (y == 17 && x == 1)
@@ -440,140 +698,13 @@ public:
         if (lastDirection != direction && change)
             lastDirection = direction;
     }
-};
-
-class Blinky : public Ghost {
-private:
-    int x, y, score, direction, lastDirection;
-public:
-    ~Blinky() {};
-    Blinky() {};
-    friend int Pacman::Lose(Blinky& blinky, Pinky& pinky, Inky& inky, Clyde& clyde);
-    Blinky(int x, int y, int score, int direction, int lastDirection) : Ghost(x, y, score, direction, lastDirection) {};
-    void BlinkyMove(Pacman pacman, Map map, GameSettings settings, RenderWindow& window) {
-        move(map, pacman.getX(), pacman.getY());
-        ghostDraw(settings.getBlinkyColor(), window, settings);
-    }
-};
-
-class Pinky : public Ghost {
-private:
-    int x, y, score, direction, lastDirection;
-public:
-    ~Pinky() {};
-    Pinky() {};
-    friend int Pacman::Lose(Blinky& blinky, Pinky& pinky, Inky& inky, Clyde& clyde);
-    Pinky(int x, int y, int score, int direction, int lastDirection) : Ghost(x, y, score, direction, lastDirection) {};
-    void PinkyMove(Pacman pacman, Map map, GameSettings settings, RenderWindow& window) {
-        int a = pacman.getX(), b = pacman.getY();
-        switch (pacman.getNextDirection())
-        {
-        case 0:
-            b = b - 4;
-            break;
-        case 1:
-            b = b + 4;
-            break;
-        case 2:
-            a = a - 4;
-            break;
-        case 3:
-            a = a + 4;
-            break;
-        }
-        move(map, a, b);
-        ghostDraw(settings.getPinkyColor(), window, settings);
-    }
-};
-
-class Inky : public Ghost {
-private:
-    int x, y, score, direction, lastDirection;
-public:
-    ~Inky() {};
-    Inky() {};
-    friend int Pacman::Lose(Blinky& blinky, Pinky& pinky, Inky& inky, Clyde& clyde);
-    Inky(int x, int y, int score, int direction, int lastDirection) : Ghost(x, y, score, direction, lastDirection) {};
-    void InkyMove(Pacman pacman, Map map, Ghost blinky, GameSettings settings, RenderWindow& window) {
-        int a = pacman.getX(), b = pacman.getY();
-        switch (pacman.getNextDirection())
-        {
-        case 0:
-            b = b - 2;
-            break;
-        case 1:
-            b = b + 2;
-            break;
-        case 2:
-            a = a - 2;
-            break;
-        case 3:
-            a = a + 2;
-            break;
-        }
-        a = blinky.getX() + 2 * (a - blinky.getX());
-        b = blinky.getY() + 2 * (b - blinky.getY());
-        move(map, a, b);
-        ghostDraw(settings.getInkyColor(), window, settings);
-    }
-};
-
-class Clyde : public Ghost {
-private:
-    int x, y, score, direction, lastDirection;
-public:
-    ~Clyde() {};
-    Clyde() {};
-    friend int Pacman::Lose(Blinky& blinky, Pinky& pinky, Inky& inky, Clyde& clyde);
-    Clyde(int x, int y, int score, int direction, int lastDirection) : Ghost(x, y, score, direction, lastDirection) {};
-    void ClydeMove(Pacman pacman, Map map, GameSettings settings, RenderWindow& window) {
-        int a, b;
-        float mainDistance = distance(pacman.getX(), pacman.getY(), x, y);
-        if (mainDistance > 8)
-        {
-            a = pacman.getX();
-            b = pacman.getY();
-        }
-        else
-        {
-            a = 0;
-            b = map.getH();
-        }
-        move(map, a, b);
-        ghostDraw(settings.getClydeColor(), window, settings);
-    }
-};
-
-int Pacman::Lose(Blinky& blinky, Pinky& pinky, Inky& inky, Clyde& clyde)
-{
-    int result = 0;
-    if (getX() == blinky.getX() && getY() == blinky.getY()) {
-        loseLife();
-        result = 1;
-    }
-    else if (getX() == pinky.getX() &&getY() == pinky.getY()) {
-        loseLife();
-        result = 1;
-    }
-    else if (getX() == inky.getX() && getY() == inky.getY()) {
-        loseLife();
-        result = 1;
-    }
-    else if (getX() == clyde.getX() && getY() == clyde.getY()) {
-        loseLife();
-        result = 1;
-    }
-
-    return result;
 }
-   
-
 
 class Game {
 public:
     Game() {};
     ~Game() {};
-    void resetGame(Map& map, Pacman& pacman, Ghost** ghostArray, GameSettings& settings, Text& Result, int f) {
+    void resetGame(Map& map, Pacman& pacman, Ghost** ghostArray, GameSettings& settings, Text& Result, Fruit& fruit, int f) {
         // сброс еды
         Food smallFood(-2, 5, 'o');
         Food bigFood(0, 10, 'O');
@@ -583,9 +714,8 @@ public:
         map.setTile(pacman.getY(), pacman.getX(), ' ');
         map.setTile(settings.getPacmanStartY(), settings.getPacmanStartX(), 'P');
      
-
-
-       
+        // сброс фрукта
+        fruit.setIsActive(false);
 
         // сброс Pacman
         pacman.setX(settings.getPacmanStartX());
@@ -601,11 +731,7 @@ public:
         pacman.setNextDirection(3);
         pacman.setSpeed(0);
 
-
-
-
         // сброс призраков
-         //Ghost** ghostArray = new Ghost * [4];
         Blinky& blinky = *static_cast<Blinky*>(ghostArray[0]);
         Pinky& pinky = *static_cast<Pinky*>(ghostArray[1]);
         Inky& inky = *static_cast<Inky*>(ghostArray[2]);
@@ -615,6 +741,7 @@ public:
         inky.setAll(15, 14, 0, 3, 3);
         clyde.setAll(17, 14, 0, 3, 3);
 
+        //убираем результат
         Result.setString(" ");
     }
 };
@@ -624,19 +751,10 @@ int main()
 {
     Game game;
     int f = 0;
-    //динамический массив объектов класса GameSettings 
-    GameSettings* settingsArray;
-    settingsArray = new GameSettings[2];
-    settingsArray[0] = GameSettings("Pac-Man 1", 25, 14, 26, sf::Color::Yellow, sf::Color::Blue, sf::Color::White, sf::Color::White, sf::Color::Red, sf::Color(255, 185, 193),
+   GameSettings settings = GameSettings("Pac-Man 1", 25, 14, 26, sf::Color::Yellow, sf::Color::Blue, sf::Color::White, sf::Color::White, sf::Color::Red, sf::Color(255, 185, 193),
         sf::Color::Cyan, sf::Color(255, 165, 0));
-    settingsArray[1] = GameSettings("Pac-Man 1", 25, 14, 8, sf::Color(255, 255, 153), sf::Color(100, 149, 247), sf::Color(255, 245, 238),
-        sf::Color(255, 228, 225), sf::Color(220, 20, 60), sf::Color(255, 105, 180), sf::Color(176, 234, 240), sf::Color(255, 140, 0)
-    );
-    srand(time(NULL));
-    GameSettings settings = settingsArray[rand() % 2];
 
     Pacman pacman(settings.getPacmanStartX(), settings.getPacmanStartY(), settings.getPacmanStartX(), settings.getPacmanStartY(), 0, 3, 3, 0);
-    Ghost** ghostArray = new Ghost * [4];
     Food smallFood(0, 5, 'o');
     Food bigFood(0, 10, 'O');
     Map map(35, 30, smallFood, bigFood);
@@ -682,6 +800,7 @@ int main()
     int randFruit = 0;
 
     //Mассив динамических объектов класса Ghost
+    Ghost** ghostArray = new Ghost * [4];
     ghostArray[0] = new Blinky(11, 14, 0, 3, 3);
     ghostArray[1] = new Pinky(13, 14, 0, 3, 3);
     ghostArray[2] = new Inky(15, 14, 0, 3, 3);
@@ -694,6 +813,7 @@ int main()
     if (!font.loadFromFile("Unformital Medium.ttf")) {
         return EXIT_FAILURE;
     }
+
     sf::Text scoreText;
     scoreText.setFont(font);
     scoreText.setCharacterSize(40);
@@ -709,12 +829,13 @@ int main()
     Result.setCharacterSize(80);
     Result.setFillColor(sf::Color::White);
     Result.setPosition(5 * settings.getGridSize(), 10 * settings.getGridSize());
-    RenderWindow window(VideoMode(settings.getGridSize() * map.getW(), settings.getGridSize() * map.getH()), settings.getWindowTitle());
     sf::Text highScore;
     highScore.setFont(font);
     highScore.setCharacterSize(40);
     highScore.setFillColor(sf::Color::White);
     highScore.setPosition(11 * settings.getGridSize(), 1 * settings.getGridSize());
+
+    RenderWindow window(VideoMode(settings.getGridSize() * map.getW(), settings.getGridSize() * map.getH()), settings.getWindowTitle(), sf::Style::Titlebar | sf::Style::Close);
 
     while (window.isOpen())
     {
@@ -724,7 +845,7 @@ int main()
             if (event.type == Event::Closed)
                 window.close();
             if (event.type == Event::KeyPressed && event.key.code == sf::Keyboard::Enter) {
-                game.resetGame(map, pacman, ghostArray, settings, Result, f);
+                game.resetGame(map, pacman, ghostArray, settings, Result, fruitArray[0], f);
             }
         }
         if (!fruitArray[0].getIsActive())
@@ -747,10 +868,8 @@ int main()
         }
         else
         {
-           
-            pacman.move(map, fruitArray[randFruit]);
-
-            if (pacman.Lose(blinky, pinky, inky, clyde))
+            pacman.move(map, fruitArray[randFruit], ghostArray);
+            if (pacman.Collision(ghostArray))
             {
                 if (pacman.getLives())
                 {
@@ -767,22 +886,14 @@ int main()
                     pacman.setSpeed(0);
                     pacman.setNextDirection(3);
                 }
-
-
             }
             else {
-            //   blinky.BlinkyMove(pacman, map, settings, window);
-           //    pinky.PinkyMove(pacman, map, settings, window);
-            //    inky.InkyMove(pacman, map, blinky, settings, window);
-             //   clyde.ClydeMove(pacman, map, settings, window);
+               blinky.BlinkyMove(pacman, map, settings, window, ghostArray);
+               pinky.PinkyMove(pacman, map, settings, window, ghostArray);
+                inky.InkyMove(pacman, map, blinky, settings, window, ghostArray);
+                clyde.ClydeMove(pacman, map, settings, window, ghostArray);
             }
         }
-            
-           
-      
-       
-  
-
         scoreText.setString("Score " + std::to_string(pacman.getScore()));
         livesText.setString("Lives " + std::to_string(pacman.getLives()));
         highScore.setString("High score " + std::to_string(pacman.getHighScore()));
@@ -791,7 +902,6 @@ int main()
         window.draw(highScore);
         window.display();
     }
-    delete[] settingsArray;
     for (int i = 0; i < 4; ++i)
         delete ghostArray[i];
     delete[] ghostArray;
