@@ -15,15 +15,14 @@ class Clyde;
 class GameSettings {
 private:
     std::string windowTitle;
-    sf::Color pacmanColor;
-    sf::Color squareColor;
-    sf::Color smallCircleColor;
-    sf::Color biglCircleColor;
-    sf::Color blinkyColor;
-    sf::Color pinkyColor;
-    sf::Color inkyColor;
-    sf::Color clydeColor;
+    sf::Color corridorColor;
+    sf::Color wallColor;
+    sf::Color smallFoodColor;
+    sf::Color bigFoodColor;
+    int corridorSize;
     int gridSize;
+    int smallFoodSize;
+    int bigFoodSize;
     int pacmanStartX;
     int pacmanStartY;
 
@@ -31,24 +30,22 @@ public:
     ~GameSettings() {};
     int getPacmanStartX() const { return pacmanStartX; }
     int getPacmanStartY() const { return pacmanStartY; }
-    GameSettings() {}
-    GameSettings(std::string windowTitle, int gridSize,
+    GameSettings() {};
+    GameSettings(std::string windowTitle, int gridSize, int corridorSize, int smallFoodSize, int bigFoodSize, 
         int pacmanStartX, int pacmanStartY,
-        sf::Color pacmanColor, sf::Color squareColor, sf::Color smallCircleColor,
-        sf::Color biglCircleColor, sf::Color blinkyColor, sf::Color pinkyColor,
-        sf::Color inkyColor, sf::Color clydeColor) : windowTitle(windowTitle), gridSize(gridSize),
-        pacmanStartX(pacmanStartX), pacmanStartY(pacmanStartY), pacmanColor(pacmanColor), squareColor(squareColor), smallCircleColor(smallCircleColor),
-        biglCircleColor(biglCircleColor), blinkyColor(blinkyColor), pinkyColor(pinkyColor), inkyColor(inkyColor), clydeColor(clydeColor) {};
+        sf::Color wallColor, sf::Color corridorColor, sf::Color smallFoodColor,
+        sf::Color bigFoodColor) : windowTitle(windowTitle), gridSize(gridSize), corridorSize(corridorSize),
+        pacmanStartX(pacmanStartX), pacmanStartY(pacmanStartY), corridorColor(corridorColor), wallColor(wallColor), smallFoodColor(smallFoodColor),
+        bigFoodColor(bigFoodColor), smallFoodSize(smallFoodSize), bigFoodSize(bigFoodSize) {};
     std::string getWindowTitle() const { return windowTitle; }
     int getGridSize() const { return gridSize; }
-    sf::Color getPacmanColor() const { return pacmanColor; }
-    sf::Color getSquareColor() const { return squareColor; }
-    sf::Color getCircleColor() const { return smallCircleColor; }
-    sf::Color getCircle2Color() const { return biglCircleColor; }
-    sf::Color getBlinkyColor() const { return blinkyColor; }
-    sf::Color getPinkyColor() const { return pinkyColor; }
-    sf::Color getInkyColor() const { return inkyColor; }
-    sf::Color getClydeColor() const { return clydeColor; }
+    int getCorridorSize() const { return corridorSize; }
+    int getSmallFoodSize() const { return smallFoodSize; }
+    int getBigFoodSize() const { return bigFoodSize; }
+    sf::Color getCorridorColor() const { return corridorColor; }
+    sf::Color getWallColor() const { return wallColor; }
+    sf::Color getSmallFoodColor() const { return smallFoodColor; }
+    sf::Color getBigFoodColor() const { return bigFoodColor; }
 };
 
 class Food {
@@ -166,7 +163,7 @@ public:
             do {                                           //выбор случайных координат
                 randY = rand() % 30 + 4;
                 randX = rand() % 23 + 4;
-            } while (map.getTile(randY, randX) != ' ' && map.getTile(randY, randX) != 'b');
+            } while (map.getTile(randY, randX) != ' ');
             x = randX;
             y = randY;
             sprite.setPosition(randX * settings.getGridSize(), randY * settings.getGridSize());
@@ -184,17 +181,13 @@ bool Fruit::isActive = false;
 
 class Pacman {
 private:
-    int x, y, nextX, nextY, score, nextDirection, lives, speed;
-    int highScore;
-    int animationFrame; // Текущий кадр анимации рта
-    int animationSpeed;//Скорость анимации
-    int animationDirection; //Направление анимации
+    int x, y, nextX, nextY, score, nextDirection, lives, speed, maxSpeed, highScore, animationFrame, animationSpeed, animationDirection; 
     sf::Sprite pacmanSprite;
    sf::Texture pacmanTextures[4][3];
 public:
     ~Pacman() {};
     Pacman(int x, int y, int nextX, int nextY, int speed, int nextDirection, int lives, int score) : x(x), y(y), nextX(nextX),
-        nextY(nextY), speed(speed), nextDirection(nextDirection), lives(lives), score(score), animationFrame(0), animationSpeed(0) {
+        nextY(nextY), speed(speed), nextDirection(nextDirection), lives(lives), score(score), animationFrame(0), animationSpeed(0), maxSpeed(45) {
         highScore = 0;
     }
     int getX() const { return x; }
@@ -232,7 +225,7 @@ public:
 
     void updateAnimation() {
         animationSpeed++;
-        if (animationSpeed >= 30)
+        if (animationSpeed >= maxSpeed/2)
         {
             //if (animationDirection == 0)
                 animationFrame = (animationFrame + 1) % 3;
@@ -244,7 +237,6 @@ public:
     {
 
         pacmanSprite.setTexture(pacmanTextures[nextDirection][animationFrame]);
-        //pacmanSprite.setPosition(x * 25, y * 25);
         return pacmanSprite;
     }
 
@@ -274,7 +266,7 @@ public:
             nextY = y;
         }
         speed++;
-        if (speed >= 60)
+        if (speed >= maxSpeed)
         {
             switch (nextDirection)
             {
@@ -312,14 +304,14 @@ public:
             {
                 addScore((map.getBigFood()).getPoint());
                 (map.getBigFood()).decreaseCount();
-                setGhostsFrightened(ghost, 3000);
+                setGhostsFrightened(ghost, 1000);
             }
             if (map.getTile(nextY, nextX)=='F')
             {
                 addScore(fruit.getPoints());
                 fruit.setIsActive(false);
             }
-            map.setTile(y, x, 'b');
+            map.setTile(y, x, ' ');
             map.setTile(nextY, nextX, 'P');
             x = nextX;
             y = nextY;
@@ -345,15 +337,13 @@ public:
 
 void Map::MazePaint(GameSettings& settings, RenderWindow& window, Sprite fruitShape, Sprite pacman) {
     RectangleShape square(Vector2f(settings.getGridSize(), settings.getGridSize()));
-    square.setFillColor(settings.getSquareColor());
-       RectangleShape square2(Vector2f(settings.getGridSize()+20, settings.getGridSize()+20));
-       square2.setFillColor(Color::Black);
-    CircleShape smallCircle(3);
-    smallCircle.setFillColor(settings.getCircleColor());
-    CircleShape biglCircle(6);
-    biglCircle.setFillColor(settings.getCircle2Color());
-    // RectangleShape pacman(Vector2f(settings.getGridSize(), settings.getGridSize()));
- //    pacman.setFillColor(settings.getPacmanColor());
+    square.setFillColor(settings.getWallColor());
+    RectangleShape square2(Vector2f(settings.getCorridorSize(), settings.getCorridorSize()));
+    square2.setFillColor(settings.getCorridorColor());
+    CircleShape smallCircle(settings.getSmallFoodSize());
+    smallCircle.setFillColor(settings.getSmallFoodColor());
+    CircleShape bigCircle(settings.getBigFoodSize());
+    bigCircle.setFillColor(settings.getBigFoodColor());
     for (int i = 0; i < H; i++)
         for (int j = 0; j < W; j++)
         {
@@ -372,7 +362,6 @@ void Map::MazePaint(GameSettings& settings, RenderWindow& window, Sprite fruitSh
                 window.draw(square2);
             }
         }
-
     for (int i = 0; i < H; i++)
         for (int j = 0; j < W; j++)
         {
@@ -380,31 +369,25 @@ void Map::MazePaint(GameSettings& settings, RenderWindow& window, Sprite fruitSh
             {
                 
                 smallCircle.setPosition(j * settings.getGridSize() + 16.5, i * settings.getGridSize() + 16.5f);
-                // int pacmanX = static_cast<int>(pacman.getPosition().y / settings.getGridSize());
-             //    int pacmanCol = static_cast<int>(pacman.getPosition().x / settings.getGridSize());
                 window.draw(smallCircle);
             }
             else if (maze[i][j] == bigFood.getType())
             {
                 
-                biglCircle.setPosition(j * settings.getGridSize() + 14.5f, i * settings.getGridSize() + 14.5f);
-                window.draw(biglCircle);
+                bigCircle.setPosition(j * settings.getGridSize() + 14.5f, i * settings.getGridSize() + 14.5f);
+                window.draw(bigCircle);
             }
             else if (maze[i][j] == 'F')
             {
                 fruitShape.setPosition(j * settings.getGridSize() + 10.5f, i * settings.getGridSize() + 10.5f);
                 window.draw(fruitShape);
             }
-          
-            
             else if (maze[i][j] == 'P')
             {
-               
                 pacman.setPosition(j * settings.getGridSize() + 5.5f, i * settings.getGridSize() + 5.5f);
                 window.draw(pacman);
             }
         }
-
 };
 
 class Ghost {
@@ -415,19 +398,31 @@ public:
         EATEN
     };
     protected:
-    int x, y, score, direction, lastDirection;
+    int x, y, score, direction, lastDirection, maxSpeed, maxFrightSpeed;
     int frightenedTimer;  // таймер для режима испуга
     GhostState currentState;
+    sf::Sprite ghostSprite;
+    sf::Texture ghostTextures[5];
 public:
     Ghost() {};
     ~Ghost() {};
-    Ghost(int x, int y, int score, int direction, int lastDirection) : x(x), y(y), score(score), direction(direction), lastDirection(lastDirection) {};
+    Ghost(int x, int y, int score, int direction, int lastDirection) : x(x), y(y), score(score), direction(direction), lastDirection(lastDirection) { maxSpeed = 55; maxFrightSpeed = 200; };
     int getX() const { return x; }
     int getY() const { return y; }
     int getScore() const { return score; }
     int getDirection() const { return direction; }
     int getLastDirection() const { return lastDirection; }
     void setAll(int a, int b, int c, int d, int e) { x = a, y = b, score = c, d = direction, e = lastDirection; }
+    void setSprite(sf::Sprite a) { ghostSprite = a; }
+    void setTextures(sf::Texture(textures)[4]) {
+        for (int i = 0; i < 5; i++)
+                ghostTextures[i] = textures[i];
+    }
+
+    sf::Sprite getSprite()
+    {
+        return ghostSprite;
+    }
 
     GhostState getCurrentState() { return currentState; }
     void setGhostState(GhostState state, int duration) {
@@ -438,17 +433,10 @@ public:
     float distance(int x1, int y1, int x2, int y2) {
         return (sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2)));
     }
-    void ghostDraw(sf::Color color, RenderWindow& window, GameSettings settings)
+    void ghostDraw(RenderWindow& window, GameSettings settings)
     {
-        RectangleShape ghostShape(Vector2f(settings.getGridSize(), settings.getGridSize()));
-        if (currentState == FRIGHTENED)
-        {
-            ghostShape.setFillColor(sf::Color::White); //Белый цвет для испуганного состояния
-        }
-        else
-            ghostShape.setFillColor(color);
-        ghostShape.setPosition(getX() * settings.getGridSize(), getY() * settings.getGridSize());
-        window.draw(ghostShape);
+        ghostSprite.setPosition(getX() * settings.getGridSize() + 5.0f, getY() * settings.getGridSize()+5.0f);
+        window.draw(ghostSprite);
     }
 
     void move(Map map, int goalX, int goalY, Ghost** ghost);
@@ -517,21 +505,17 @@ int Pacman::Collision(Ghost** ghost)
 }
 
 class Blinky : public Ghost {
-private:
-    int x, y, score, direction, lastDirection;
 public:
     ~Blinky() {};
     Blinky() {};
     Blinky(int x, int y, int score, int direction, int lastDirection) : Ghost(x, y, score, direction, lastDirection) {};
     void BlinkyMove(Pacman pacman, Map map, GameSettings settings, RenderWindow& window, Ghost** ghost) {
         move(map, pacman.getX(), pacman.getY(), ghost);
-        ghostDraw(settings.getBlinkyColor(), window, settings);
+        ghostDraw(window, settings);
     }
 };
 
 class Pinky : public Ghost {
-private:
-    int x, y, score, direction, lastDirection;
 public:
     ~Pinky() {};
     Pinky() {};
@@ -554,13 +538,11 @@ public:
             break;
         }
         move(map, a, b, ghost);
-        ghostDraw(settings.getPinkyColor(), window, settings);
+        ghostDraw(window, settings);
     }
 };
 
 class Inky : public Ghost {
-private:
-    int x, y, score, direction, lastDirection;
 public:
     ~Inky() {};
     Inky() {};
@@ -585,13 +567,11 @@ public:
         a = blinky.getX() + 2 * (a - blinky.getX());
         b = blinky.getY() + 2 * (b - blinky.getY());
         move(map, a, b, ghost);
-        ghostDraw(settings.getInkyColor(), window, settings);
+        ghostDraw(window, settings);
     }
 };
 
 class Clyde : public Ghost {
-private:
-    int x, y, score, direction, lastDirection;
 public:
     ~Clyde() {};
     Clyde() {};
@@ -610,12 +590,10 @@ public:
             b = map.getH();
         }
         move(map, a, b, ghost);
-        ghostDraw(settings.getClydeColor(), window, settings);
+        ghostDraw(window, settings);
     }
 };
 
-
-   
 void Ghost::move(Map map, int goalX, int goalY, Ghost** ghost) {
     float distanceUp, distanceDown, distanceLeft, distanceRight;
     double minDistance = INFINITY;
@@ -633,7 +611,7 @@ void Ghost::move(Map map, int goalX, int goalY, Ghost** ghost) {
             ghost[3]->setAll(17, 14, 0, 3, 3);
         }
         score++;
-        if (score >= 400)
+        if (score >= maxFrightSpeed)
         {
             change = 1;
             int newDirection;
@@ -690,6 +668,7 @@ void Ghost::move(Map map, int goalX, int goalY, Ghost** ghost) {
         }
         if (lastDirection != direction && change)
             lastDirection = direction;
+        ghostSprite.setTexture(ghostTextures[4]);
     }
     else
     {
@@ -720,7 +699,7 @@ void Ghost::move(Map map, int goalX, int goalY, Ghost** ghost) {
         }
 
         score++;
-        if (score >= 60)
+        if (score >= maxSpeed)
         {
             change = 1;
             // Двигаемся в выбранном направлении
@@ -751,6 +730,8 @@ void Ghost::move(Map map, int goalX, int goalY, Ghost** ghost) {
 
         if (lastDirection != direction && change)
             lastDirection = direction;
+
+        ghostSprite.setTexture(ghostTextures[direction]);
     }
 }
 
@@ -765,7 +746,7 @@ public:
         // сброс карты
         map = Map(35, 30, smallFood, bigFood);
         map.createMap();
-        map.setTile(pacman.getY(), pacman.getX(), ' ');
+      //  map.setTile(pacman.getY(), pacman.getX(), ' ');
         map.setTile(settings.getPacmanStartY(), settings.getPacmanStartX(), 'P');
      
         // сброс фрукта
@@ -791,9 +772,13 @@ public:
         Inky& inky = *static_cast<Inky*>(ghostArray[2]);
         Clyde& clyde = *static_cast<Clyde*>(ghostArray[3]);
         blinky.setAll(11, 14, 0, 3, 3);
+        blinky.setGhostState(Ghost::NORMAL, 0);
         pinky.setAll(13, 14, 0, 3, 3);
+        pinky.setGhostState(Ghost::NORMAL, 0);
         inky.setAll(15, 14, 0, 3, 3);
+        inky.setGhostState(Ghost::NORMAL, 0);
         clyde.setAll(17, 14, 0, 3, 3);
+        clyde.setGhostState(Ghost::NORMAL, 0);
 
         //убираем результат
         Result.setString(" ");
@@ -805,14 +790,9 @@ int main()
 {
     Game game;
     int f = 0;  //проигрыш или победа
-    GameSettings settings = GameSettings("Pac-Man 1", 25, 14, 26, sf::Color::Yellow, sf::Color::Blue, sf::Color::White, sf::Color::White, sf::Color::Red, sf::Color(255, 185, 193),
-        sf::Color::Cyan, sf::Color(255, 165, 0));
+    GameSettings settings = GameSettings("Pac-Man", 25, 45, 3, 6, 14, 26, sf::Color::Blue,sf::Color::Black, sf::Color::White, sf::Color::White);
     sf::Texture pacmanTextures[4][3]; //4 направления, 3 кадра анимации рта
-
-
-
     Pacman pacman(settings.getPacmanStartX(), settings.getPacmanStartY(), settings.getPacmanStartX(), settings.getPacmanStartY(), 0, 3, 3, 0);
-
     for (int i = 0; i < 4; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -880,6 +860,58 @@ int main()
     Pinky& pinky = *static_cast<Pinky*>(ghostArray[1]);
     Inky& inky = *static_cast<Inky*>(ghostArray[2]);
     Clyde& clyde = *static_cast<Clyde*>(ghostArray[3]);
+    sf::Texture blinkyTextures[5];
+    for (int i = 0; i < 4; i++)
+    {
+        std::string filename = "images/blinky_" + std::to_string(i) + ".png";
+        blinkyTextures[i].loadFromFile(filename);
+    }
+    blinkyTextures[4].loadFromFile("images/fright.png");
+    blinky.setTextures(blinkyTextures);
+    sf::Sprite blinkySprite;
+    blinkySprite.setTexture(blinkyTextures[3]);//По умолчанию смотрим вправо
+    blinkySprite.setScale(0.21f, 0.21f); //уменьшим размер
+    blinky.setSprite(blinkySprite);
+
+    sf::Texture pinkyTextures[5];
+    for (int i = 0; i < 4; i++)
+    {
+        std::string filename = "images/pinky_" + std::to_string(i) + ".png";
+        pinkyTextures[i].loadFromFile(filename);
+    }
+    pinkyTextures[4].loadFromFile("images/fright.png");
+    pinky.setTextures(pinkyTextures);
+    sf::Sprite pinkySprite;
+    pinkySprite.setTexture(pinkyTextures[3]);//По умолчанию смотрим вправо
+    pinkySprite.setScale(0.21f, 0.21f); //уменьшим размер
+    pinky.setSprite(pinkySprite);
+
+    sf::Texture inkyTextures[5];
+    for (int i = 0; i < 4; i++)
+    {
+        std::string filename = "images/inky_" + std::to_string(i) + ".png";
+        inkyTextures[i].loadFromFile(filename);
+    }
+    inkyTextures[4].loadFromFile("images/fright.png");
+    inky.setTextures(inkyTextures);
+    sf::Sprite inkySprite;
+    inkySprite.setTexture(inkyTextures[3]);//По умолчанию смотрим вправо
+    inkySprite.setScale(0.21f, 0.21f); //уменьшим размер
+    inky.setSprite(inkySprite);
+
+    sf::Texture clydeTextures[5];
+    for (int i = 0; i < 4; i++)
+    {
+        std::string filename = "images/clyde_" + std::to_string(i) + ".png";
+        clydeTextures[i].loadFromFile(filename);
+    }
+    clydeTextures[4].loadFromFile("images/fright.png");
+    clyde.setTextures(clydeTextures);
+    sf::Sprite clydeSprite;
+    clydeSprite.setTexture(clydeTextures[3]);//По умолчанию смотрим вправо
+    clydeSprite.setScale(0.21f, 0.21f); //уменьшим размер
+    clyde.setSprite(clydeSprite);
+
     //загрузка шрифта
     sf::Font font;
     if (!font.loadFromFile("Unformital Medium.ttf")) {
@@ -932,10 +964,10 @@ int main()
         map.MazePaint(settings, window, fruitArray[randFruit].getSprite(), pacman.getSprite());
         if (f = pacman.WonOrLost(map.getSmallFood(), map.getBigFood(), Result))
         {
-            blinky.ghostDraw(settings.getBlinkyColor(), window, settings);
-            pinky.ghostDraw(settings.getPinkyColor(), window, settings);
-            inky.ghostDraw(settings.getInkyColor(), window, settings);
-            clyde.ghostDraw(settings.getClydeColor(), window, settings);
+            blinky.ghostDraw(window, settings);
+            pinky.ghostDraw(window, settings);
+            inky.ghostDraw(window, settings);
+            clyde.ghostDraw(window, settings);
             sf::FloatRect textBounds = Result.getLocalBounds();
             sf::Vector2u windowSize = window.getSize();
             Result.setPosition((windowSize.x - textBounds.width) / 2, (windowSize.y - textBounds.height) / 2 - 50);
@@ -953,7 +985,7 @@ int main()
                     pinky.setAll(13, 14, 0, 3, 3);
                     inky.setAll(15, 14, 0, 3, 3);
                     clyde.setAll(17, 14, 0, 3, 3);
-                    map.setTile(pacman.getY(), pacman.getX(), 'b');
+                    map.setTile(pacman.getY(), pacman.getX(), ' ');
                     map.setTile(settings.getPacmanStartY(), settings.getPacmanStartX(), 'P');
                     pacman.setX(settings.getPacmanStartX());
                     pacman.setY(settings.getPacmanStartY());
