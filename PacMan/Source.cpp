@@ -123,7 +123,6 @@ public:
         };
         for (int i = 0; i < H; ++i) {
             maze[i] = tempmaze[i];
-
         }
         // подсчет еды после создания
         for (int i = 0; i < H; ++i) {
@@ -134,52 +133,12 @@ public:
                 else if (maze[i][j] == bigFood.getType()) {
                     bigFood.increaseCount();
                 }
-
             }
         }
     }
 
-    void MazePaint(GameSettings& settings, RenderWindow& window, Sprite fruitShape) {
-        RectangleShape square(Vector2f(settings.getGridSize(), settings.getGridSize()));
-        square.setFillColor(settings.getSquareColor());
-        CircleShape smallCircle(3);
-        smallCircle.setFillColor(settings.getCircleColor());
-        CircleShape biglCircle(6);
-        biglCircle.setFillColor(settings.getCircle2Color());
-        RectangleShape pacman(Vector2f(settings.getGridSize(), settings.getGridSize()));
-        pacman.setFillColor(settings.getPacmanColor());
-        for (int i = 0; i < H; i++)
-            for (int j = 0; j < W; j++)
-            {
-                if (maze[i][j] == 'X')
-                {
-                    square.setPosition(j * settings.getGridSize(), i * settings.getGridSize());
-                    window.draw(square);
-                }
-                else if (maze[i][j] == smallFood.getType())
-                {
-                    smallCircle.setPosition(j * settings.getGridSize() + 8.5, i * settings.getGridSize() + 8.5f);
-                    int pacmanX = static_cast<int>(pacman.getPosition().y / settings.getGridSize());
-                    int pacmanCol = static_cast<int>(pacman.getPosition().x / settings.getGridSize());
-                    window.draw(smallCircle);
-                }
-                else if (maze[i][j] == bigFood.getType())
-                {
-                  
-                    biglCircle.setPosition(j * settings.getGridSize() + 5.5f, i * settings.getGridSize() + 5.5f);
-                    window.draw(biglCircle);
-                }
-                else if (maze[i][j] == 'P')
-                {
-                    pacman.setPosition(j * settings.getGridSize(), i * settings.getGridSize());
-                    window.draw(pacman);
-                }
-                else if (maze[i][j] == 'F')
-                {
-                    window.draw(fruitShape);
-                }
-            }
-    }
+    void MazePaint(GameSettings& settings, RenderWindow& window, Sprite fruitShape, Sprite pacman);
+
 };
 
 class Fruit {
@@ -207,7 +166,7 @@ public:
             do {                                           //выбор случайных координат
                 randY = rand() % 30 + 4;
                 randX = rand() % 23 + 4;
-            } while (map.getTile(randY, randX) != ' ');
+            } while (map.getTile(randY, randX) != ' ' && map.getTile(randY, randX) != 'b');
             x = randX;
             y = randY;
             sprite.setPosition(randX * settings.getGridSize(), randY * settings.getGridSize());
@@ -219,16 +178,25 @@ public:
         }
     }
 };
-
 bool Fruit::isActive = false;
+
+
 
 class Pacman {
 private:
     int x, y, nextX, nextY, score, nextDirection, lives, speed;
-    static int highScore;
+    int highScore;
+    int animationFrame; // Текущий кадр анимации рта
+    int animationSpeed;//Скорость анимации
+    int animationDirection; //Направление анимации
+    sf::Sprite pacmanSprite;
+   sf::Texture pacmanTextures[4][3];
 public:
     ~Pacman() {};
-    Pacman(int x, int y, int nextX, int nextY, int speed, int nextDirection, int lives, int score) : x(x), y(y), nextX(nextX), nextY(nextY), speed(speed), nextDirection(nextDirection), lives(lives), score(score) {};
+    Pacman(int x, int y, int nextX, int nextY, int speed, int nextDirection, int lives, int score) : x(x), y(y), nextX(nextX),
+        nextY(nextY), speed(speed), nextDirection(nextDirection), lives(lives), score(score), animationFrame(0), animationSpeed(0) {
+        highScore = 0;
+    }
     int getX() const { return x; }
     int getY() const { return y; }
     int getScore() const { return score; }
@@ -242,39 +210,71 @@ public:
     void setLives(int a) { lives = a; }
     void setScore(int a) { score = a; }
     void setNextDirection(int a) { nextDirection = a; }
+    void setSprite(sf::Sprite a) { pacmanSprite = a; }
+   void setTextures(sf::Texture(*textures)[3]) {
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 3; j++)
+                pacmanTextures[i][j] = textures[i][j];
+        }
+    }
     void loseLife() { lives--; }
     void addScore(int p) { score += p; }
-    int getHighScore();
-    void updateHighScore(int newScore);
+    int getHighScore() const { return highScore; }
+    void updateHighScore(int newScore) {
+        if (newScore > highScore)
+            highScore = newScore;
+    }
 
     void setGhostsFrightened(Ghost** ghost, int duration);
 
     int Collision(Ghost** ghost);
 
+    void updateAnimation() {
+        animationSpeed++;
+        if (animationSpeed >= 30)
+        {
+            //if (animationDirection == 0)
+                animationFrame = (animationFrame + 1) % 3;
+            animationSpeed = 0;
+        }
+    }
+
+   sf::Sprite getSprite()
+    {
+
+        pacmanSprite.setTexture(pacmanTextures[nextDirection][animationFrame]);
+        //pacmanSprite.setPosition(x * 25, y * 25);
+        return pacmanSprite;
+    }
+
     void move(Map& map, Fruit& fruit, Ghost** ghost) {
         if (Keyboard::isKeyPressed(Keyboard::Up) && map.getTile(nextY - 1, nextX) != 'X' && !(nextY == 17 && nextX == 0 || nextY == 17 && nextX == map.getW() - 1)) {
             nextDirection = 0;
+            animationDirection = 0; // Сбрасываем направление анимации
             nextX = x;
             nextY = y;
         }
         if (Keyboard::isKeyPressed(Keyboard::Down) && map.getTile(nextY + 1, nextX) != 'X' && !(nextY == 17 && nextX == 0 || nextY == 17 && nextX == map.getW() - 1)) {
             nextDirection = 1;
+            animationDirection = 0; // Сбрасываем направление анимации
             nextX = x;
             nextY = y;
         }
         if (Keyboard::isKeyPressed(Keyboard::Left) && (map.getTile(nextY, nextX - 1) != 'X')) {
             nextDirection = 2;
+            animationDirection = 0; // Сбрасываем направление анимации
             nextX = x;
             nextY = y;
         }
         if (Keyboard::isKeyPressed(Keyboard::Right) && (map.getTile(nextY, nextX + 1) != 'X')) {
             nextDirection = 3;
+            animationDirection = 0; // Сбрасываем направление анимации
             nextX = x;
             nextY = y;
         }
-
         speed++;
-        if (speed >= 150)
+        if (speed >= 60)
         {
             switch (nextDirection)
             {
@@ -301,7 +301,6 @@ public:
             }
             speed = 0;
         }
-
         if (map.getTile(nextY, nextX) != 'X')
         {
             if (map.getTile(nextY, nextX) == (map.getSmallFood()).getType())
@@ -320,7 +319,7 @@ public:
                 addScore(fruit.getPoints());
                 fruit.setIsActive(false);
             }
-            map.setTile(y, x, ' ');
+            map.setTile(y, x, 'b');
             map.setTile(nextY, nextX, 'P');
             x = nextX;
             y = nextY;
@@ -344,14 +343,69 @@ public:
     }
 };
 
-int Pacman::highScore = 0; // Инициализация статической переменной
-int Pacman::getHighScore() {
-    return highScore;
-}
-void Pacman::updateHighScore(int newScore) {
-    if (newScore > highScore)
-        highScore = newScore;
-}
+void Map::MazePaint(GameSettings& settings, RenderWindow& window, Sprite fruitShape, Sprite pacman) {
+    RectangleShape square(Vector2f(settings.getGridSize(), settings.getGridSize()));
+    square.setFillColor(settings.getSquareColor());
+       RectangleShape square2(Vector2f(settings.getGridSize()+20, settings.getGridSize()+20));
+       square2.setFillColor(Color::Black);
+    CircleShape smallCircle(3);
+    smallCircle.setFillColor(settings.getCircleColor());
+    CircleShape biglCircle(6);
+    biglCircle.setFillColor(settings.getCircle2Color());
+    // RectangleShape pacman(Vector2f(settings.getGridSize(), settings.getGridSize()));
+ //    pacman.setFillColor(settings.getPacmanColor());
+    for (int i = 0; i < H; i++)
+        for (int j = 0; j < W; j++)
+        {
+            if (maze[i][j] == 'X')
+            {
+                square.setPosition(j * settings.getGridSize(), i * settings.getGridSize());
+                window.draw(square);
+            }
+        }
+    for (int i = 0; i < H; i++)
+        for (int j = 0; j < W; j++)
+        {
+            if (maze[i][j] != 'X')
+            {
+                square2.setPosition(j * settings.getGridSize(), i * settings.getGridSize());
+                window.draw(square2);
+            }
+        }
+
+    for (int i = 0; i < H; i++)
+        for (int j = 0; j < W; j++)
+        {
+            if (maze[i][j] == smallFood.getType())
+            {
+                
+                smallCircle.setPosition(j * settings.getGridSize() + 16.5, i * settings.getGridSize() + 16.5f);
+                // int pacmanX = static_cast<int>(pacman.getPosition().y / settings.getGridSize());
+             //    int pacmanCol = static_cast<int>(pacman.getPosition().x / settings.getGridSize());
+                window.draw(smallCircle);
+            }
+            else if (maze[i][j] == bigFood.getType())
+            {
+                
+                biglCircle.setPosition(j * settings.getGridSize() + 14.5f, i * settings.getGridSize() + 14.5f);
+                window.draw(biglCircle);
+            }
+            else if (maze[i][j] == 'F')
+            {
+                fruitShape.setPosition(j * settings.getGridSize() + 10.5f, i * settings.getGridSize() + 10.5f);
+                window.draw(fruitShape);
+            }
+          
+            
+            else if (maze[i][j] == 'P')
+            {
+               
+                pacman.setPosition(j * settings.getGridSize() + 5.5f, i * settings.getGridSize() + 5.5f);
+                window.draw(pacman);
+            }
+        }
+
+};
 
 class Ghost {
 public:
@@ -666,7 +720,7 @@ void Ghost::move(Map map, int goalX, int goalY, Ghost** ghost) {
         }
 
         score++;
-        if (score >= 150)
+        if (score >= 60)
         {
             change = 1;
             // Двигаемся в выбранном направлении
@@ -722,7 +776,7 @@ public:
         pacman.setY(settings.getPacmanStartY());
         pacman.setNextX(settings.getPacmanStartX());
         pacman.setNextY(settings.getPacmanStartY());
-        if (f == 2)
+        if (f == 2)  //если Пакман проиграл
         {
             pacman.setLives(3);
             pacman.updateHighScore(pacman.getScore());
@@ -750,46 +804,64 @@ public:
 int main()
 {
     Game game;
-    int f = 0;
-   GameSettings settings = GameSettings("Pac-Man 1", 25, 14, 26, sf::Color::Yellow, sf::Color::Blue, sf::Color::White, sf::Color::White, sf::Color::Red, sf::Color(255, 185, 193),
+    int f = 0;  //проигрыш или победа
+    GameSettings settings = GameSettings("Pac-Man 1", 25, 14, 26, sf::Color::Yellow, sf::Color::Blue, sf::Color::White, sf::Color::White, sf::Color::Red, sf::Color(255, 185, 193),
         sf::Color::Cyan, sf::Color(255, 165, 0));
+    sf::Texture pacmanTextures[4][3]; //4 направления, 3 кадра анимации рта
+
+
 
     Pacman pacman(settings.getPacmanStartX(), settings.getPacmanStartY(), settings.getPacmanStartX(), settings.getPacmanStartY(), 0, 3, 3, 0);
+
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            std::string filename = "images/pacman_" + std::to_string(i) + "_" + std::to_string(j) + ".png";
+            pacmanTextures[i][j].loadFromFile(filename);
+             
+        }
+    }
+    pacman.setTextures(pacmanTextures);
+    sf::Sprite pacmanSprite;
+    pacmanSprite.setTexture(pacmanTextures[3][0]);//По умолчанию смотрим вправо
+    pacmanSprite.setScale(0.21f, 0.21f); //уменьшим размер
+   pacman.setSprite(pacmanSprite);
+
     Food smallFood(0, 5, 'o');
     Food bigFood(0, 10, 'O');
     Map map(35, 30, smallFood, bigFood);
     map.createMap();
-    
+    //cпрайт вишенок
     sf::Texture cherryTexture;
     cherryTexture.loadFromFile("images/cherry.png");
     sf::Sprite cherryShape;
     cherryShape.setTexture(cherryTexture);
-    cherryShape.setScale(0.1f, 0.1f);
-
+    cherryShape.setScale(0.12f, 0.12f);
+    //спрайт яблока
     sf::Texture appleTexture;
     appleTexture.loadFromFile("images/apple.png");
     sf::Sprite appleShape;
     appleShape.setTexture(appleTexture);
-    appleShape.setScale(0.02f, 0.02f);
-
+    appleShape.setScale(0.022f, 0.022f);
+    //спрайт груши
     sf::Texture pearTexture;
     pearTexture.loadFromFile("images/pear.png");
     sf::Sprite pearShape;
     pearShape.setTexture(pearTexture);
-    pearShape.setScale(0.1f, 0.1f);
-
+    pearShape.setScale(0.12f, 0.12f);
+    //спрайт апельсина
     sf::Texture orangeTexture;
     orangeTexture.loadFromFile("images/orange.png");
     sf::Sprite orangeShape;
     orangeShape.setTexture(orangeTexture);
-    orangeShape.setScale(0.1f, 0.1f);
-
+    orangeShape.setScale(0.12f, 0.12f);
+    //спрайт арбуза
     sf::Texture watermelonTexture;
     watermelonTexture.loadFromFile("images/watermelon.png");
     sf::Sprite watermelonShape;
     watermelonShape.setTexture(watermelonTexture);
-    watermelonShape.setScale(0.03f, 0.03f);
-
+    watermelonShape.setScale(0.032f, 0.032f);
     //массив фруктов
     Fruit fruitArray[5];
     fruitArray[0] = Fruit(20, cherryShape);
@@ -798,9 +870,8 @@ int main()
     fruitArray[3] = Fruit(50, orangeShape);
     fruitArray[4] = Fruit(60, watermelonShape);
     int randFruit = 0;
-
-    //Mассив динамических объектов класса Ghost
-    Ghost** ghostArray = new Ghost * [4];
+    //массив призраков
+    Ghost** ghostArray = new Ghost *[4];
     ghostArray[0] = new Blinky(11, 14, 0, 3, 3);
     ghostArray[1] = new Pinky(13, 14, 0, 3, 3);
     ghostArray[2] = new Inky(15, 14, 0, 3, 3);
@@ -809,21 +880,24 @@ int main()
     Pinky& pinky = *static_cast<Pinky*>(ghostArray[1]);
     Inky& inky = *static_cast<Inky*>(ghostArray[2]);
     Clyde& clyde = *static_cast<Clyde*>(ghostArray[3]);
+    //загрузка шрифта
     sf::Font font;
     if (!font.loadFromFile("Unformital Medium.ttf")) {
         return EXIT_FAILURE;
     }
-
+    //текущий счёт
     sf::Text scoreText;
     scoreText.setFont(font);
     scoreText.setCharacterSize(40);
     scoreText.setFillColor(sf::Color::White);
     scoreText.setPosition(1 * settings.getGridSize(), 1 * settings.getGridSize());
+    //число жизней
     sf::Text livesText;
     livesText.setFont(font);
     livesText.setCharacterSize(40);
     livesText.setFillColor(sf::Color::White);
     livesText.setPosition(24 * settings.getGridSize(), 1 * settings.getGridSize());
+    //результат - проигрыш или победа
     sf::Text Result;
     Result.setFont(font);
     Result.setCharacterSize(80);
@@ -852,9 +926,10 @@ int main()
         {
             randFruit = rand() % 5 ;
         }
+        randFruit = 4;
         window.clear(Color::Black);
         fruitArray[randFruit].createFruit(settings, map, window);
-        map.MazePaint(settings, window, fruitArray[randFruit].getSprite());
+        map.MazePaint(settings, window, fruitArray[randFruit].getSprite(), pacman.getSprite());
         if (f = pacman.WonOrLost(map.getSmallFood(), map.getBigFood(), Result))
         {
             blinky.ghostDraw(settings.getBlinkyColor(), window, settings);
@@ -869,6 +944,7 @@ int main()
         else
         {
             pacman.move(map, fruitArray[randFruit], ghostArray);
+            pacman.updateAnimation();
             if (pacman.Collision(ghostArray))
             {
                 if (pacman.getLives())
@@ -877,7 +953,7 @@ int main()
                     pinky.setAll(13, 14, 0, 3, 3);
                     inky.setAll(15, 14, 0, 3, 3);
                     clyde.setAll(17, 14, 0, 3, 3);
-                    map.setTile(pacman.getY(), pacman.getX(), ' ');
+                    map.setTile(pacman.getY(), pacman.getX(), 'b');
                     map.setTile(settings.getPacmanStartY(), settings.getPacmanStartX(), 'P');
                     pacman.setX(settings.getPacmanStartX());
                     pacman.setY(settings.getPacmanStartY());
