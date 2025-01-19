@@ -1,0 +1,46 @@
+﻿  Source.cpp
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(169,70): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(169,38): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(324,64): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(324,35): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(330,64): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(330,35): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,80): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,80): warning C4244:         with
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,80): warning C4244:         [
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,80): warning C4244:             T=float
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,80): warning C4244:         ]
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,56): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,56): warning C4244:         with
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,56): warning C4244:         [
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,56): warning C4244:             T=float
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(339,56): warning C4244:         ]
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,89): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,89): warning C4244:         with
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,89): warning C4244:         [
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,89): warning C4244:             T=float
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,89): warning C4244:         ]
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,61): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,61): warning C4244:         with
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,61): warning C4244:         [
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,61): warning C4244:             T=float
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(341,61): warning C4244:         ]
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(343,54): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(345,50): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(352,66): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(352,38): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(361,67): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(361,39): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(371,68): warning C4244: аргумент: преобразование "double" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(434,16): warning C4244: return: преобразование "double" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(927,61): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(927,33): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(933,62): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(933,34): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(939,62): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(939,34): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(982,68): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(982,39): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(997,76): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\PacMan\Source.cpp(997,47): warning C4244: аргумент: преобразование "int" в "float", возможна потеря данных
+  PacMan.vcxproj -> C:\Users\79231\OneDrive\Рабочий стол\курсовая_3семестр\x64\Debug\PacMan.exe
