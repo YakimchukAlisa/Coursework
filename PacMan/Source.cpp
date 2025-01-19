@@ -328,7 +328,7 @@ public:
         else if (!getLives())
         {
             Result.setPosition(10 * settings.getGridSize(), 15 * settings.getGridSize());
-            Result.setString("You won!");
+            Result.setString("You lost!");
             f = 2;
         }
         return f;
@@ -587,7 +587,7 @@ public:
         else
         {
             a = 0;
-            b = map.getH();
+            b = map.getH()-1;
         }
         move(map, a, b, ghost);
         ghostDraw(window, settings);
@@ -785,8 +785,6 @@ public:
         clyde.setAll(17, 20, 0, 3, 3);
         clyde.setGhostState(Ghost::NORMAL, 0);
 
-        //убираем результат
-        Result.setString(" ");
     }
     void startGame(RenderWindow& window) {
         int f = 0;  //проигрыш или победа
@@ -800,7 +798,6 @@ public:
             {
                 std::string filename = "images/pacman_" + std::to_string(i) + "_" + std::to_string(j) + ".png";
                 pacmanTextures[i][j].loadFromFile(filename);
-
             }
         }
         pacman.setTextures(pacmanTextures);
@@ -963,14 +960,14 @@ public:
                     pause = !pause;
                 }
             }
-            if (!fruitArray[0].getIsActive())
+            if (!fruitArray[0].getIsActive())    //определяем, какой фрукт появится на карте
             {
                 randFruit = rand() % 5;
             }
             window.clear(Color::Black);
             fruitArray[randFruit].createFruit(settings, map, window);
             map.MazePaint(settings, window, fruitArray[randFruit].getSprite(), pacman.getSprite());
-            if (pause)
+            if (pause)                                   //если игра на паузе
             {
                 blinky.ghostDraw(window, settings);
                 pinky.ghostDraw(window, settings);
@@ -988,7 +985,7 @@ public:
             }
             else
             {
-                if (f = pacman.WonOrLost(map.getSmallFood(), map.getBigFood(), Result, pressEnter, window, settings))
+                if (f = pacman.WonOrLost(map.getSmallFood(), map.getBigFood(), Result, pressEnter, window, settings))  //если конец игры
                 {
                     blinky.ghostDraw(window, settings);
                     pinky.ghostDraw(window, settings);
@@ -1002,7 +999,7 @@ public:
                 {
                     pacman.move(map, fruitArray[randFruit], ghostArray);
                     pacman.updateAnimation();
-                    if (pacman.Collision(ghostArray))
+                    if (pacman.Collision(ghostArray))                        //если пакман столкнулся с приведением
                     {
                         if (pacman.getLives())
                         {
@@ -1021,10 +1018,10 @@ public:
                         }
                     }
                     else {
-                        blinky.BlinkyMove(pacman, map, settings, window, ghostArray);
-                        pinky.PinkyMove(pacman, map, settings, window, ghostArray);
-                        inky.InkyMove(pacman, map, blinky, settings, window, ghostArray);
-                        clyde.ClydeMove(pacman, map, settings, window, ghostArray);
+                       blinky.BlinkyMove(pacman, map, settings, window, ghostArray);
+                       pinky.PinkyMove(pacman, map, settings, window, ghostArray);
+                       inky.InkyMove(pacman, map, blinky, settings, window, ghostArray);
+                       clyde.ClydeMove(pacman, map, settings, window, ghostArray);
                     }
                 }
                 scoreText.setString("Score " + std::to_string(pacman.getScore()));
