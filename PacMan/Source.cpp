@@ -316,17 +316,19 @@ public:
         }
     }
 
-    int WonOrLost(Food smallFood, Food bigFood, Text& Result)
+    int WonOrLost(Food smallFood, Food bigFood, Text& Result, Text& pressEnter, RenderWindow& window, GameSettings settings)
     {
         int f = 0;
         if (smallFood.getCount() == 0 && bigFood.getCount() == 0)
         {
+            Result.setPosition(10 * settings.getGridSize(), 15 * settings.getGridSize());
             Result.setString("You won!");
             f = 1;
         }
         else if (!getLives())
         {
-            Result.setString("You lost! ");
+            Result.setPosition(10 * settings.getGridSize(), 15 * settings.getGridSize());
+            Result.setString("You won!");
             f = 2;
         }
         return f;
@@ -806,7 +808,6 @@ public:
         pacmanSprite.setTexture(pacmanTextures[3][0]);//По умолчанию смотрим вправо
         pacmanSprite.setScale(0.21f, 0.21f); //уменьшим размер
         pacman.setSprite(pacmanSprite);
-
         Food smallFood(0, 5, 'o');
         Food bigFood(0, 10, 'O');
         Map map(35, 30, smallFood, bigFood);
@@ -936,15 +937,17 @@ public:
         highScore.setCharacterSize(40);
         highScore.setFillColor(sf::Color::White);
         highScore.setPosition(11 * settings.getGridSize(), 1 * settings.getGridSize());
-
         //результат - проигрыш или победа
         sf::Text Result;
         Result.setFont(font);
         Result.setCharacterSize(80);
         Result.setFillColor(sf::Color::White);
-        sf::FloatRect textBounds = Result.getLocalBounds();
-        sf::Vector2u windowSize = window.getSize();
-        Result.setPosition((windowSize.x - textBounds.width) / 3, (windowSize.y - textBounds.height) / 2 - 50);
+        //результат - проигрыш или победа
+        sf::Text pressEnter;
+        pressEnter.setFont(font);
+        pressEnter.setCharacterSize(30);
+        pressEnter.setFillColor(sf::Color::White);
+        pressEnter.setString("Press Enter to continue");
 
         while (window.isOpen())
         {
@@ -976,6 +979,7 @@ public:
                 scoreText.setString("Score " + std::to_string(pacman.getScore()));
                 livesText.setString("Lives " + std::to_string(pacman.getLives()));
                 highScore.setString("High score " + std::to_string(pacman.getHighScore()));
+                Result.setPosition(11 * settings.getGridSize(), 15 * settings.getGridSize());
                 Result.setString("Paused");
                 window.draw(scoreText);
                 window.draw(livesText);
@@ -984,13 +988,15 @@ public:
             }
             else
             {
-                if (f = pacman.WonOrLost(map.getSmallFood(), map.getBigFood(), Result))
+                if (f = pacman.WonOrLost(map.getSmallFood(), map.getBigFood(), Result, pressEnter, window, settings))
                 {
                     blinky.ghostDraw(window, settings);
                     pinky.ghostDraw(window, settings);
                     inky.ghostDraw(window, settings);
                     clyde.ghostDraw(window, settings);
+                    pressEnter.setPosition(10 * settings.getGridSize(), 20 * settings.getGridSize());
                     window.draw(Result);
+                    window.draw(pressEnter);
                 }
                 else
                 {
