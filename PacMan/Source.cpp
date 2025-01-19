@@ -143,6 +143,8 @@ private:
     int x;       //координата X на карте
     int y;       //координата Y на карте
     int points;  //количество очков за съедение
+    static bool eat1;     //съеден ли первый фрукт
+    static bool eat2;     //съеден ли второй фрукт
     Sprite sprite; //графическое представление
     static bool isActive;  //активен ли фрукт
 public:
@@ -150,6 +152,10 @@ public:
     Fruit(int points, Sprite sprite) : points(points), sprite(sprite) {}
     int getX() const { return x; }
     int getY() const { return y; }
+    static bool getEat1() { return Fruit::eat1; }
+    static void setEat1(int a) { Fruit::eat1 = a; }
+    static bool getEat2() {return  Fruit::eat2++; }
+    static void setEat2(int a) { Fruit::eat2 = a; }
     int getPoints() const { return points; }
     Sprite getSprite() const { return sprite; }
     static void setIsActive(bool active) { Fruit::isActive = active; }
@@ -157,7 +163,7 @@ public:
 
     void createFruit(GameSettings& settings, Map& map, RenderWindow& window) {
         int sum = (map.getSmallFood()).getCount() + (map.getBigFood()).getCount();
-        if ((sum == 176 || sum == 76) && !isActive)  //когда Пакман съел первые 70 или 170 точек
+        if ((sum == 176 && eat1==false|| sum == 76 && eat2==false) && !isActive)  //когда Пакман съел первые 70 или 170 точек
         {
             int randY, randX;
             do {                                           //выбор случайных координат
@@ -176,6 +182,8 @@ public:
     }
 };
 bool Fruit::isActive = false;
+bool Fruit::eat1 = false;
+bool Fruit::eat2 = false;
 
 
 
@@ -306,8 +314,18 @@ public:
             }
             if (map.getTile(nextY, nextX)=='F')
             {
-                addScore(fruit.getPoints());
-                fruit.setIsActive(false);
+                if (fruit.getEat1() == false)
+                {
+                    fruit.setEat1(true);
+                    addScore(fruit.getPoints());
+                    fruit.setIsActive(false);
+                }
+                else if (fruit.getEat2() == false)
+                {
+                    fruit.setEat1(true);
+                    addScore(fruit.getPoints());
+                    fruit.setIsActive(false);
+                }
             }
             map.setTile(y, x, ' ');
             map.setTile(nextY, nextX, 'P');
@@ -756,6 +774,8 @@ public:
 
         // сброс фрукта
         fruit.setIsActive(false);
+        fruit.setEat1(false);
+        fruit.setEat2(false);
 
         // сброс Pacman
         pacman.setX(settings.getPacmanStartX());
